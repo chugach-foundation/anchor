@@ -87,6 +87,29 @@ pub fn cancel_order_v2<'info>(
     Ok(())
 }
 
+pub fn cancel_order_by_client_id_v2<'info>(
+    ctx: CpiContext<'_, '_, '_, 'info, CancelOrderV2<'info>>,
+    client_order_id: u64,
+) -> Result<()> {
+    let ix = serum_dex::instruction::cancel_order_by_client_order_id(
+        &ID,
+        ctx.accounts.market.key,
+        ctx.accounts.market_bids.key,
+        ctx.accounts.market_asks.key,
+        ctx.accounts.open_orders.key,
+        ctx.accounts.open_orders_authority.key,
+        ctx.accounts.event_queue.key,
+        client_order_id,
+    )
+    .map_err(|pe| ProgramError::from(pe))?;
+    solana_program::program::invoke_signed(
+        &ix,
+        &ToAccountInfos::to_account_infos(&ctx),
+        ctx.signer_seeds,
+    )?;
+    Ok(())
+}
+
 pub fn settle_funds<'info>(ctx: CpiContext<'_, '_, '_, 'info, SettleFunds<'info>>) -> Result<()> {
     let referral = ctx.remaining_accounts.get(0);
     let ix = serum_dex::instruction::settle_funds(
